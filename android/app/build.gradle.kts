@@ -17,14 +17,17 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-
     defaultConfig {
         applicationId = "com.example.real_estate_app"
-        minSdk = flutter.minSdkVersion
+        minSdk = 21        // در کاتلین minSdk هم گاهی کار می‌کند ولی minSdkVersion استانداردتر است
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
     }
+
+    
+
+   
 
     buildTypes {
         release {

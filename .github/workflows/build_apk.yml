@@ -11,17 +11,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # استفاده از جاوا 17 (سازگار و مطمئن)
+    # استفاده از جاوا 21 (دقیقاً مثل سیستم خودتان)
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: '21'
 
     - uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
 
-    # تایید لایسنس‌ها (مهم برای SDK 36)
     - name: Accept Android Licenses
       run: |
         yes | flutter doctor --android-licenses
@@ -29,13 +28,9 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
-    # ساخت APK (بدون وابستگی به فایل gradlew لوکال)
+    # اضافه کردن --verbose برای اینکه اگر خطا داد بفهمیم دقیقا کجاست
     - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons
-
-    # لیست کردن فایل‌ها برای پیدا کردن APK (جهت اطمینان)
-    - name: List Build Outputs
-      run: ls -R build/app/outputs/flutter-apk/
+      run: flutter build apk --release --no-tree-shake-icons --verbose
 
     - name: Upload APK
       uses: actions/upload-artifact@v4

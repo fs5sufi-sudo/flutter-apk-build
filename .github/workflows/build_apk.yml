@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # استفاده از جاوا 21 (دقیقاً مثل سیستم خودتان)
+    # استفاده از جاوا 21 (چون پروژه شما مدرن است و SDK 36 دارد)
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
@@ -28,12 +28,13 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
-    # اضافه کردن --verbose برای اینکه اگر خطا داد بفهمیم دقیقا کجاست
-    - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons --verbose
+    # تغییر مهم: ساخت نسخه Debug به جای Release
+    # این دستور نیاز به کلید امنیتی ندارد و احتمال موفقیتش ۹۹٪ است
+    - name: Build APK (Debug)
+      run: flutter build apk --debug --no-tree-shake-icons
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: release-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        name: debug-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk

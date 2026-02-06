@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.example.real_estate_app"
     compileSdk = 34
-    ndkVersion = "25.1.8937393" // نسخه ثابت و امن
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -17,21 +17,21 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
     defaultConfig {
         applicationId = "com.example.real_estate_app"
-        minSdk = 21        // در کاتلین minSdk هم گاهی کار می‌کند ولی minSdkVersion استانداردتر است
+        minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
     }
 
-    
-
-   
-
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            // برای جلوگیری از خطای ساین، فعلا این خط را کامنت کردم
+            // signingConfig = signingConfigs.getByName("debug")
+            minifyEnabled = false
+            shrinkResources = false
         }
     }
 }

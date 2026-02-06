@@ -2,37 +2,34 @@ name: Build Android APK
 
 on:
   push:
-    branches: [ "main", "master" ] # هر وقت کد را آپلود کردید اجرا شود
+    branches: [ "main", "master" ]
 
 jobs:
   build:
-    runs-on: ubuntu-latest # استفاده از سرور لینوکس (سریع و رایگان)
+    runs-on: ubuntu-latest
 
     steps:
-    # ۱. دریافت کد شما از گیت‌هاب
     - uses: actions/checkout@v4
 
-    # ۲. نصب جاوا (پیش‌نیاز اندروید)
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    # ۳. نصب فلاتر
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.0' # یا نسخه دلخواه شما
-        channel: 'stable'
+        channel: 'stable' # تغییر مهم: استفاده از آخرین نسخه استیبل
 
-    # ۴. دانلود وابستگی‌ها (بدون فیلتر!)
+    # اضافه کردن مرحله تایید لایسنس‌ها برای SDK 36
+    - name: Accept Android Licenses
+      run: yes | flutter doctor --android-licenses
+
     - name: Get Dependencies
       run: flutter pub get
 
-    # ۵. ساخت فایل APK
     - name: Build APK
       run: flutter build apk --release --no-tree-shake-icons
 
-    # ۶. آپلود فایل APK ساخته شده تا شما بتوانید دانلود کنید
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:

@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # استفاده از جاوا 17 (سازگارترین نسخه با اکثر پروژه‌ها)
+    # استفاده از جاوا 17 (سازگار و مطمئن)
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
@@ -21,22 +21,21 @@ jobs:
       with:
         channel: 'stable'
 
-    # حل مشکل مجوز فایل گرادل (بسیار مهم در لینوکس)
-    - name: Fix Gradle Permissions
-      run: chmod +x android/gradlew
-
-    # تایید لایسنس‌ها و نصب ابزارهای ضروری SDK 36
-    - name: Setup Android SDK
+    # تایید لایسنس‌ها (مهم برای SDK 36)
+    - name: Accept Android Licenses
       run: |
         yes | flutter doctor --android-licenses
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-36" "build-tools;34.0.0"
 
     - name: Get Dependencies
       run: flutter pub get
 
-    # ساخت APK با جزئیات بیشتر (برای عیب‌یابی)
+    # ساخت APK (بدون وابستگی به فایل gradlew لوکال)
     - name: Build APK
       run: flutter build apk --release --no-tree-shake-icons
+
+    # لیست کردن فایل‌ها برای پیدا کردن APK (جهت اطمینان)
+    - name: List Build Outputs
+      run: ls -R build/app/outputs/flutter-apk/
 
     - name: Upload APK
       uses: actions/upload-artifact@v4

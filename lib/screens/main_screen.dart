@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
-import 'search_tab.dart';
-import 'add_listing_screen.dart';
-import 'favorites_screen.dart';
-import 'my_listings_screen.dart';
+import 'home_screen.dart';      
+import 'search_tab.dart';       
+import 'add_listing_screen.dart'; 
+import 'favorites_screen.dart'; 
+import 'my_listings_screen.dart'; 
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 
@@ -17,72 +17,58 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   bool _isLoggedIn = false;
-  bool _isAgent = false;
-  bool _isApproved = false;
+  String? _userAvatarUrl;
 
   @override
   void initState() {
     super.initState();
-    _checkStatus();
+    _checkLogin();
   }
 
-  void _checkStatus() async {
+  void _checkLogin() async {
     final auth = AuthService();
     final loggedIn = await auth.isLoggedIn();
-    bool agent = false;
-    bool approved = false;
-
+    String? avatar;
+    
     if (loggedIn) {
-      agent = await auth.isAgent();
-      approved = await auth.isUserApproved();
+      final profile = await auth.getProfile();
+      if (profile != null) {
+        avatar = profile['avatar'];
+        // ترفند: اضافه کردن زمان فعلی به ته آدرس برای شکستن کش
+        if (avatar != null) {
+          avatar = '$avatar?v=${DateTime.now().millisecondsSinceEpoch}';
+        }
+      }
     }
 
     setState(() {
       _isLoggedIn = loggedIn;
-      _isAgent = agent;
-      _isApproved = approved;
+      _userAvatarUrl = avatar;
     });
   }
 
-  // صفحات تب‌ها
   List<Widget> get _pages => [
     const HomeScreen(),
     const SearchTab(),
-    const SizedBox(), // جای دکمه وسط
+    const SizedBox(), 
     const FavoritesScreen(),
     _isLoggedIn ? const MyListingsScreen() : const LoginScreen(),
   ];
 
   void _onTabTapped(int index) async {
-    // دکمه وسط (ثبت آگهی)
     if (index == 2) {
       if (!_isLoggedIn) {
-        // ۱. اگر مهمان است -> برو لاگین
-        _showLoginDialog();
-        return;
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+        _checkLogin();
+      } else {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddListingScreen()));
       }
-      
-      if (!_isAgent) {
-        // ۲. اگر کاربر عادی است -> خطا
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فقط مشاوران می‌توانند آگهی ثبت کنند'), backgroundColor: Colors.red));
-        return;
-      }
-
-      if (!_isApproved) {
-        // ۳. اگر مشاور تایید نشده -> خطا
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('حساب شما هنوز تأیید نشده است'), backgroundColor: Colors.orange));
-        return;
-      }
-
-      // ۴. اگر همه چی اوکی بود -> برو ثبت آگهی
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddListingScreen()));
       return;
     }
-
-    // تب پروفایل
+    
     if (index == 4 && !_isLoggedIn) {
        await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-       _checkStatus(); // بعد از برگشت، وضعیت را آپدیت کن
+       _checkLogin();
        if (await AuthService().isLoggedIn()) setState(() => _currentIndex = 4);
        return;
     }
@@ -90,30 +76,13 @@ class _MainScreenState extends State<MainScreen> {
     setState(() => _currentIndex = index);
   }
 
-  void _showLoginDialog() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('نیاز به ورود'),
-        content: const Text('لطفاً وارد شوید.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لغو')),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.push(context, MaterialPageRoute(builder: (c) => const LoginScreen())).then((_) => _checkStatus());
-            },
-            child: const Text('ورود'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
@@ -123,12 +92,31 @@ class _MainScreenState extends State<MainScreen> {
         unselectedItemColor: Colors.grey,
         showSelectedLabels: false,
         showUnselectedLabels: false,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'خانه'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'جستجو'),
-          BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40, color: Color(0xFFFFD700)), label: 'ثبت'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'علاقه'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'پروفایل'),
+        items: [
+          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'خانه'),
+          const BottomNavigationBarItem(icon: Icon(Icons.search), label: 'جستجو'),
+          const BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 40, color: Color(0xFFFFD700)), label: 'ثبت'),
+          const BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'علاقه'),
+          
+          BottomNavigationBarItem(
+            icon: _userAvatarUrl != null
+                ? Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _currentIndex == 4 ? const Color(0xFFFFD700) : Colors.transparent,
+                        width: 2
+                      )
+                    ),
+                    child: CircleAvatar(
+                      radius: 12,
+                      backgroundColor: Colors.grey,
+                      backgroundImage: NetworkImage(_userAvatarUrl!),
+                    ),
+                  )
+                : const Icon(Icons.person),
+            label: 'پروفایل',
+          ),
         ],
       ),
     );

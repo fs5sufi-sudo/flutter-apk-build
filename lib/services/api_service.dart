@@ -7,13 +7,48 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import '../models/listing.dart';
 import '../models/agent.dart';
+import '../models/subscription_package.dart'; // ایمپورت مدل جدید
 import 'auth_service.dart';
 
 class ApiService {
-  // آدرس سرور (127.0.0.1 برای وب لوکال)
+  // آدرس سرور
   static const String baseUrl = 'http://127.0.0.1:8000/api';
 
-  // 1. لیست آگهی‌ها (با فیلتر و لایک)
+  // --- متدهای جدید: اشتراک ---
+  
+  // 1. دریافت لیست بسته‌ها
+  Future<List<SubscriptionPackage>> fetchPackages() async {
+    final url = Uri.parse('$baseUrl/accounts/packages/');
+    final token = await AuthService().getToken();
+    if (token == null) return [];
+
+    try {
+      final response = await http.get(url, headers: {'Authorization': 'Token $token'});
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
+        return data.map((json) => SubscriptionPackage.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 2. خرید بسته
+  Future<bool> buyPackage(int packageId) async {
+    final url = Uri.parse('$baseUrl/accounts/packages/buy/$packageId/');
+    final token = await AuthService().getToken();
+    if (token == null) return false;
+
+    try {
+      final response = await http.post(url, headers: {'Authorization': 'Token $token'});
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+  // ---------------------------
+
   Future<List<Listing>> fetchListings({
     String? city,
     String? propertyType,
@@ -48,7 +83,6 @@ class ApiService {
     }
   }
 
-  // 2. آگهی‌های من
   Future<List<Listing>> fetchMyListings() async {
     final url = Uri.parse('$baseUrl/listings/my_listings/');
     final token = await AuthService().getToken();
@@ -74,7 +108,6 @@ class ApiService {
     }
   }
 
-  // 3. لایک / آنلایک
   Future<bool> toggleFavorite(int id) async {
     final url = Uri.parse('$baseUrl/listings/$id/toggle_favorite/');
     final token = await AuthService().getToken();
@@ -92,7 +125,6 @@ class ApiService {
     }
   }
 
-  // 4. لیست علاقه‌مندی‌ها
   Future<List<Listing>> fetchFavorites() async {
     final url = Uri.parse('$baseUrl/listings/favorites/');
     final token = await AuthService().getToken();
@@ -118,7 +150,6 @@ class ApiService {
     }
   }
 
-  // 5. حذف آگهی
   Future<bool> deleteListing(int id) async {
     final url = Uri.parse('$baseUrl/listings/$id/');
     final token = await AuthService().getToken();
@@ -136,7 +167,6 @@ class ApiService {
     }
   }
 
-  // 6. حذف عکس گالری
   Future<bool> deleteGalleryImage(int imageId) async {
     final url = Uri.parse('$baseUrl/listing-images/$imageId/');
     final token = await AuthService().getToken();
@@ -154,7 +184,6 @@ class ApiService {
     }
   }
 
-  // 7. ویرایش آگهی
   Future<bool> updateListing(
       int id, 
       Map<String, String> fields, 
@@ -200,7 +229,6 @@ class ApiService {
     }
   }
 
-  // 8. ثبت گوش‌به‌زنگ
   Future<bool> createSavedSearch({
     String? city,
     String? propertyType,
@@ -232,7 +260,6 @@ class ApiService {
     }
   }
 
-  // 9. دریافت تبلیغ فعال
   Future<Map<String, dynamic>?> fetchActiveAd() async {
     final url = Uri.parse('$baseUrl/listings/ad/active/');
     try {
@@ -247,7 +274,6 @@ class ApiService {
     }
   }
 
-  // 10. ثبت آگهی
   Future<bool> createListing(
       Map<String, String> fields, 
       dynamic mainImage,       
@@ -289,7 +315,6 @@ class ApiService {
     }
   }
 
-  // 11. پروفایل مشاور
   Future<Agent> fetchAgentProfile(int agentId) async {
     final url = Uri.parse('$baseUrl/accounts/agent/$agentId/');
     try {
@@ -305,7 +330,6 @@ class ApiService {
     }
   }
 
-  // 12. لیست آگهی‌های مشاور
   Future<List<Listing>> fetchAgentListings(int agentId) async {
     final url = Uri.parse('$baseUrl/listings/?agent=$agentId');
     try {

@@ -11,6 +11,8 @@ import 'add_listing_screen.dart';
 import 'my_listings_screen.dart';
 import 'favorites_screen.dart';
 import 'edit_profile_screen.dart';
+import 'admin_panel_screen.dart';
+import 'subscription_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoggedIn = false;
   bool _isApproved = false;
   bool _isAgent = false;
+  bool _isAdmin = false;
   String? _userAvatarUrl;
 
   String? _filterCity;
@@ -88,14 +91,20 @@ class _HomeScreenState extends State<HomeScreen> {
     
     bool approved = false;
     bool agent = false;
+    bool admin = false;
     String? avatar;
 
     if (loggedIn) {
       approved = await authService.isUserApproved();
       agent = await authService.isAgent();
+      admin = await authService.isAdmin();
       final profile = await authService.getProfile();
       if (profile != null) {
         avatar = profile['avatar'];
+        // ترفند شکستن کش عکس
+        if (avatar != null) {
+          avatar = '$avatar?v=${DateTime.now().millisecondsSinceEpoch}';
+        }
       }
     }
 
@@ -103,6 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _isLoggedIn = loggedIn;
       _isApproved = approved;
       _isAgent = agent;
+      _isAdmin = admin;
       _userAvatarUrl = avatar;
     });
   }
@@ -234,11 +244,19 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(16),
-          height: _isAgent ? 250 : 200, 
+          height: _isAdmin ? 350 : (_isAgent ? 300 : 200), 
           child: Column(
             children: [
               ListTile(leading: const Icon(Icons.edit, color: Colors.blue), title: const Text('ویرایش پروفایل'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (c) => const EditProfileScreen())); }),
-              if (_isAgent) ListTile(leading: const Icon(Icons.dashboard, color: Colors.orange), title: const Text('مدیریت آگهی‌های من'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (c) => const MyListingsScreen())); }),
+              
+              if (_isAgent) ...[
+                ListTile(leading: const Icon(Icons.dashboard, color: Colors.orange), title: const Text('مدیریت آگهی‌های من'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (c) => const MyListingsScreen())); }),
+                ListTile(leading: const Icon(Icons.shopping_cart, color: Colors.green), title: const Text('خرید اشتراک'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (c) => const SubscriptionScreen())); }),
+              ],
+
+              if (_isAdmin)
+                ListTile(leading: const Icon(Icons.settings, color: Colors.black), title: const Text('پنل مدیریت'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (c) => const AdminPanelScreen())); }),
+
               ListTile(leading: const Icon(Icons.favorite, color: Colors.pink), title: const Text('نشان‌ شده‌ها'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (c) => const FavoritesScreen())); }),
               ListTile(leading: const Icon(Icons.logout, color: Colors.red), title: const Text('خروج'), onTap: () { Navigator.pop(context); _handleLogout(); }),
             ],
@@ -285,6 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F8),
+      
       appBar: CustomAppBar(
         avatarUrl: _userAvatarUrl,
         onAvatarTap: _showProfileMenu,
@@ -292,6 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("نوتیفیکیشن‌ها")));
         },
       ),
+
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _navigateToAddListing,
         backgroundColor: const Color(0xFF1E2746), 
@@ -299,6 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: const Icon(Icons.add),
         label: const Text("ثبت آگهی"),
       ),
+      
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: Column(
@@ -332,56 +353,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Expanded(
-                                flex: 6, 
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      listing.imageUrl != null ? Image.network(listing.imageUrl!, fit: BoxFit.cover) : Container(color: Colors.grey.shade200, child: const Icon(Icons.image, size: 50, color: Colors.grey)),
-                                      
-                                      // --- عکس مشاور (گوشه چپ بالا) ---
-                                      if (listing.agentAvatar != null)
-                                        Positioned(
-                                          top: 8, left: 8,
-                                          child: Container(
-                                            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]),
-                                            child: CircleAvatar(
-                                              radius: 22,
-                                              backgroundColor: Colors.grey.shade300,
-                                              backgroundImage: NetworkImage(listing.agentAvatar!),
-                                            ),
-                                          ),
-                                        ),
-                                      // -------------------------------
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 4,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                    Text(listing.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                    Text(listing.city, style: const TextStyle(color: Colors.grey)),
-                                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                      Text(listing.price ?? 'توافقی', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE76F51))),
-                                      
-                                      // --- دکمه لایک + زمان ---
-                                      Row(
-                                        children: [
-                                          InkWell(onTap: () => _toggleFavorite(listing), child: Icon(listing.isFavorited ? Icons.favorite : Icons.favorite_border, color: listing.isFavorited ? Colors.red : Colors.grey)),
-                                          const SizedBox(width: 8),
-                                          Text(timeAgo(listing.createdAt), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                                        ],
-                                      ),
-                                      // -----------------------
-                                    ]),
-                                  ]),
-                                ),
-                              ),
+                              Expanded(flex: 6, child: ClipRRect(borderRadius: const BorderRadius.vertical(top: Radius.circular(16)), child: Stack(fit: StackFit.expand, children: [listing.imageUrl != null ? Image.network(listing.imageUrl!, fit: BoxFit.cover) : Container(color: Colors.grey.shade200, child: const Icon(Icons.image, size: 50, color: Colors.grey)), if (listing.agentAvatar != null) Positioned(top: 8, left: 8, child: Container(decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)]), child: CircleAvatar(radius: 16, backgroundColor: Colors.grey.shade300, backgroundImage: NetworkImage(listing.agentAvatar!))))]))),
+                              Expanded(flex: 4, child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(listing.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), Text(listing.city, style: const TextStyle(color: Colors.grey)), Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(listing.price ?? 'توافقی', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE76F51))), Row(children: [InkWell(onTap: () => _toggleFavorite(listing), child: Icon(listing.isFavorited ? Icons.favorite : Icons.favorite_border, color: listing.isFavorited ? Colors.red : Colors.grey)), const SizedBox(width: 8), Text(timeAgo(listing.createdAt), style: const TextStyle(fontSize: 10, color: Colors.grey))])])]))),
                             ],
                           ),
                         ),

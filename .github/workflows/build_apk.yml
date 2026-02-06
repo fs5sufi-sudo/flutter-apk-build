@@ -14,13 +14,12 @@ jobs:
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '17'
+        java-version: '21' # استفاده از جاوا 21 برای SDK 36
 
     - uses: subosito/flutter-action@v2
       with:
-        channel: 'stable' # تغییر مهم: استفاده از آخرین نسخه استیبل
+        channel: 'stable'
 
-    # اضافه کردن مرحله تایید لایسنس‌ها برای SDK 36
     - name: Accept Android Licenses
       run: yes | flutter doctor --android-licenses
 

@@ -11,30 +11,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # استفاده از جاوا 21 (چون پروژه شما مدرن است و SDK 36 دارد)
+    # استفاده از جاوا 17
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
-        java-version: '21'
+        java-version: '17'
 
     - uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
+        flutter-version: '3.19.0' # نسخه پایدار
 
-    - name: Accept Android Licenses
-      run: |
-        yes | flutter doctor --android-licenses
+    - name: Clean Project
+      run: flutter clean
 
     - name: Get Dependencies
       run: flutter pub get
 
-    # تغییر مهم: ساخت نسخه Debug به جای Release
-    # این دستور نیاز به کلید امنیتی ندارد و احتمال موفقیتش ۹۹٪ است
-    - name: Build APK (Debug)
-      run: flutter build apk --debug --no-tree-shake-icons
+    # ساخت نسخه Release (با امضای دیباگ که در فایل گریدل تنظیم کردیم)
+    - name: Build APK
+      run: flutter build apk --release --no-tree-shake-icons --verbose
 
     - name: Upload APK
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: debug-apk
-        path: build/app/outputs/flutter-apk/app-debug.apk
+        name: release-apk
+        path: build/app/outputs/flutter-apk/app-release.apk

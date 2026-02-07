@@ -1,39 +1,44 @@
-name: Build Android APK
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
 
-on:
-  push:
-    branches: [ "main", "master" ]
+android {
+    namespace = "com.example.real_estate_app"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
-    steps:
-    - uses: actions/checkout@v4
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
 
-    - uses: actions/setup-java@v4
-      with:
-        distribution: 'zulu'
-        java-version: '17'
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.example.real_estate_app"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
 
-    - uses: subosito/flutter-action@v2
-      with:
-        channel: 'stable'
-        flutter-version: '3.19.0'
+    buildTypes {
+        release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+}
 
-    - name: Clean Project
-      run: flutter clean
-
-    - name: Get Dependencies
-      run: flutter pub get
-
-    # تغییر استراتژی: ساخت نسخه Debug (بدون دردسر ساین و گریدل)
-    - name: Build APK (Debug Mode)
-      run: flutter build apk --debug --verbose
-
-    - name: Upload APK
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: debug-apk
-        path: build/app/outputs/flutter-apk/app-debug.apk
+flutter {
+    source = "../.."
+}

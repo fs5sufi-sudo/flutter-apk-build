@@ -28,11 +28,7 @@ android {
 
     buildTypes {
         release {
-            // اصلاح مهم: اضافه کردن is به ابتدای دستورات
-            isMinifyEnabled = false
-            isShrinkResources = false
-            
-            // استفاده از کلید دیباگ برای نسخه ریلیز (برای جلوگیری از خطای ساین)
+            // استفاده از امضای دیباگ برای جلوگیری از خطای ساین
             signingConfig = signingConfigs.getByName("debug")
         }
     }

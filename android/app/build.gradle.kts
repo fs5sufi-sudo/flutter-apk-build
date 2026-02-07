@@ -20,8 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.real_estate_app"
-        // تغییر مهم: تنظیم حداقل نسخه اندروید روی ۲۱
-        minSdk = 21
+        minSdk = 21 // <--- نسخه مهم
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
@@ -29,7 +28,6 @@ android {
 
     buildTypes {
         release {
-            // جلوگیری از خطای ساین و مینیفای
             isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")

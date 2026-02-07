@@ -40,11 +40,14 @@ class _MainScreenState extends State<MainScreen> {
         }
       }
     }
-
-    setState(() {
-      _isLoggedIn = loggedIn;
-      _userAvatarUrl = avatar;
-    });
+    
+    // شرط مهم: فقط اگر صفحه هنوز باز است آپدیت کن (رفع کرش)
+    if (mounted) {
+      setState(() {
+        _isLoggedIn = loggedIn;
+        _userAvatarUrl = avatar;
+      });
+    }
   }
 
   List<Widget> get _pages => [
@@ -69,10 +72,13 @@ class _MainScreenState extends State<MainScreen> {
     if (index == 4 && !_isLoggedIn) {
        await Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
        _checkLogin();
-       if (await AuthService().isLoggedIn()) setState(() => _currentIndex = 4);
+       // دوباره چک کن اگر لاگین کرد تب را عوض کن
+       if (await AuthService().isLoggedIn()) {
+         if (mounted) setState(() => _currentIndex = 4);
+       }
        return;
     }
-
+    
     setState(() => _currentIndex = index);
   }
 

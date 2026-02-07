@@ -1,39 +1,39 @@
-plugins {
-    id("com.android.application")
-    id("kotlin-android")
-    id("dev.flutter.flutter-gradle-plugin")
-}
+name: Build Android APK
 
-android {
-    namespace = "com.example.real_estate_app"
-    compileSdk = 34
-    ndkVersion = "25.1.8937393"
+on:
+  push:
+    branches: [ "main", "master" ]
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    steps:
+    - uses: actions/checkout@v4
 
-    defaultConfig {
-        applicationId = "com.example.real_estate_app"
-        minSdk = 21
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
-    }
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
 
-    buildTypes {
-        release {
-            // استفاده از امضای دیباگ برای جلوگیری از خطای ساین
-            signingConfig = signingConfigs.getByName("debug")
-        }
-    }
-}
+    - uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        flutter-version: '3.19.0'
 
-flutter {
-    source = "../.."
-}
+    - name: Clean Project
+      run: flutter clean
+
+    - name: Get Dependencies
+      run: flutter pub get
+
+    # تغییر استراتژی: ساخت نسخه Debug (بدون دردسر ساین و گریدل)
+    - name: Build APK (Debug Mode)
+      run: flutter build apk --debug --verbose
+
+    - name: Upload APK
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: debug-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk

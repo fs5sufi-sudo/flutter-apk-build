@@ -1,19 +1,28 @@
 pluginManagement {
-    def flutterSdkPath = run {
-        def properties = new Properties()
-        file("local.properties").withInputStream { properties.load(it) }
-        def flutterSdkPath = properties.getProperty("flutter.sdk")
-        assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
-        return flutterSdkPath
+    val flutterSdkPath = run {
+        val properties = java.util.Properties()
+        val localProperties = file("local.properties")
+        if (localProperties.exists()) {
+            localProperties.inputStream().use { properties.load(it) }
+        }
+        
+        // اول سعی کن از فایل لوکال بخونی
+        val flutterSdk = properties.getProperty("flutter.sdk")
+        if (flutterSdk != null) return@run flutterSdk
+
+        // اگر نبود (مثل توی گیت‌هاب)، از متغیر محیطی بخون
+        val flutterRoot = System.getenv("FLUTTER_ROOT")
+        if (flutterRoot != null) return@run flutterRoot
+
+        error("flutter.sdk not set in local.properties nor FLUTTER_ROOT environment variable")
     }
+
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-        // اضافه کردن سرورهای کمکی برای اطمینان
-        maven { url = uri("https://storage.googleapis.com/download.flutter.io") }
     }
 }
 

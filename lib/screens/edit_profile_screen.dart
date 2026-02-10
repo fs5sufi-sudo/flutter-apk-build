@@ -14,14 +14,12 @@ class EditProfileScreen extends StatefulWidget {
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  bool _isAgent = false; // متغیر برای تشخیص نقش
+  bool _isAgent = false;
   
   XFile? _avatar;
   String? _currentAvatarUrl;
-
   final _phoneController = TextEditingController();
   final _bioController = TextEditingController();
-
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -31,16 +29,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   void _loadProfile() async {
-    final profile = await AuthService().getProfile();
-    final isAgent = await AuthService().isAgent(); // چک کردن نقش
+    final user = await AuthService().getUserProfile();
     
-    if (profile != null) {
-      setState(() {
-        _isAgent = isAgent;
-        _phoneController.text = profile['phone_number'] ?? '';
-        _bioController.text = profile['bio'] ?? '';
-        _currentAvatarUrl = profile['avatar'];
-      });
+    if (user != null) {
+      if (mounted) {
+        setState(() {
+          _isAgent = user.isAgent;
+          _phoneController.text = user.phoneNumber ?? '';
+          _bioController.text = user.bio ?? '';
+          _currentAvatarUrl = user.avatar;
+        });
+      }
     }
   }
 
@@ -67,7 +66,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = true);
 
     final fields = <String, String>{};
-    // فقط اگر مشاور باشد، این فیلدها را می‌فرستیم
     if (_isAgent) {
       fields['phone_number'] = _phoneController.text;
       fields['bio'] = _bioController.text;
@@ -79,7 +77,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('پروفایل به‌روز شد')));
-        Navigator.pop(context);
+        Navigator.pop(context); 
       }
     } else {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطا در بروزرسانی')));
@@ -101,7 +99,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // عکس پروفایل (برای همه)
                     GestureDetector(
                       onTap: _pickAvatar,
                       child: CircleAvatar(
@@ -119,7 +116,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const Text('تغییر عکس', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 32),
 
-                    // فیلدها (فقط برای مشاور)
                     if (_isAgent) ...[
                       TextFormField(
                         controller: _phoneController,

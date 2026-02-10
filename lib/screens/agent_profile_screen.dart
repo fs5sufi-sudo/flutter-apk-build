@@ -25,28 +25,26 @@ class _AgentProfileScreenState extends State<AgentProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- منطق ریسپانسیو ---
     double screenWidth = MediaQuery.of(context).size.width;
     int crossAxisCount = screenWidth > 1200 ? 5 : screenWidth > 900 ? 4 : screenWidth > 600 ? 3 : 2;
-    // ---------------------
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('پروفایل مشاور'),
+        title: const Text('پروفایل مشاور', style: TextStyle(color: Colors.black)),
         centerTitle: true,
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E2746),
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       backgroundColor: const Color(0xFFF4F6F8),
       body: Directionality(
         textDirection: TextDirection.rtl,
-        child: Center( // کل صفحه وسط‌چین
+        child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200), // حداکثر عرض کل محتوا
+            constraints: const BoxConstraints(maxWidth: 1200),
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  // --- بخش اطلاعات مشاور (کارت وسط) ---
                   FutureBuilder<Agent>(
                     future: _agentFuture,
                     builder: (context, snapshot) {
@@ -57,7 +55,7 @@ class _AgentProfileScreenState extends State<AgentProfileScreen> {
                       return Center(
                         child: Container(
                           width: double.infinity,
-                          constraints: const BoxConstraints(maxWidth: 600), // اطلاعات مشاور خیلی پهن نشود
+                          constraints: const BoxConstraints(maxWidth: 600),
                           margin: const EdgeInsets.all(16),
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
@@ -87,18 +85,23 @@ class _AgentProfileScreenState extends State<AgentProfileScreen> {
                                 ),
                               ],
                               const SizedBox(height: 24),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تماس با: ${agent.phoneNumber ?? "نامشخص"}')));
-                                    },
-                                    icon: const Icon(Icons.phone, size: 18),
-                                    label: const Text('تماس'),
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                              
+                              // فقط دکمه تماس باقی ماند (چت حذف شد)
+                              SizedBox(
+                                width: 200,
+                                height: 48,
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تماس با: ${agent.phoneNumber ?? "نامشخص"}')));
+                                  },
+                                  icon: const Icon(Icons.phone, size: 20),
+                                  label: const Text('تماس تلفنی', style: TextStyle(fontSize: 16)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green, 
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
-                                ],
+                                ),
                               ),
                             ],
                           ),
@@ -107,12 +110,8 @@ class _AgentProfileScreenState extends State<AgentProfileScreen> {
                     },
                   ),
                   
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: Divider(),
-                  ),
+                  const Padding(padding: EdgeInsets.symmetric(horizontal: 24, vertical: 8), child: Divider()),
 
-                  // --- لیست آگهی‌ها (گرید ریسپانسیو) ---
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                     child: Row(
@@ -133,11 +132,11 @@ class _AgentProfileScreenState extends State<AgentProfileScreen> {
 
                       final listings = snapshot.data!;
                       return GridView.builder(
-                        shrinkWrap: true, // مهم برای قرار گرفتن در اسکرول
+                        shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(16),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount, // تعداد ستون هوشمند
+                          crossAxisCount: crossAxisCount,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                           childAspectRatio: 0.8,
@@ -158,7 +157,7 @@ class _AgentProfileScreenState extends State<AgentProfileScreen> {
                                     child: ClipRRect(
                                       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                                       child: listing.imageUrl != null
-                                          ? Image.network(listing.imageUrl!, fit: BoxFit.cover)
+                                          ? Image.network(listing.imageUrl!, fit: BoxFit.cover, width: double.infinity)
                                           : Container(color: Colors.grey.shade200, child: const Icon(Icons.image)),
                                     ),
                                   ),
@@ -187,7 +186,7 @@ class _AgentProfileScreenState extends State<AgentProfileScreen> {
                   ),
                 ],
               ),
-            ),
+            ),   
           ),
         ),
       ),

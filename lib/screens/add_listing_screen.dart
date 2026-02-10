@@ -24,14 +24,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
   final _priceController = TextEditingController();
   final _areaController = TextEditingController();
 
-  String _transactionType = 'SA';
-  String _propertyType = 'AP';
+  String _transactionType = 'SA'; // فروش
+  String _propertyType = 'AP';    // آپارتمان
 
   final ImagePicker _picker = ImagePicker();
-
-  // ... (متدهای pickImage و submitForm تغییری نکرده‌اند - برای خلاصه شدن تکرار نمی‌کنم، اگر خواستید بگویید) ...
-  // همان متدهای قبلی را اینجا فرض کنید یا از فایل قبلی کپی کنید.
-  // نکته: من برای اطمینان کد کامل submitForm و pickers را می‌گذارم:
 
   Future<void> _pickMainImage() async {
     final picked = await _picker.pickImage(source: ImageSource.gallery);
@@ -44,12 +40,19 @@ class _AddListingScreenState extends State<AddListingScreen> {
   }
 
   Widget _displayImage(XFile file) {
-    if (kIsWeb) return Image.network(file.path, fit: BoxFit.contain);
-    return Image.file(File(file.path), fit: BoxFit.contain);
+    if (kIsWeb) return Image.network(file.path, fit: BoxFit.cover);
+    return Image.file(File(file.path), fit: BoxFit.cover);
   }
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // اعتبارسنجی عکس اصلی
+    if (_mainImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('لطفاً عکس اصلی آگهی را انتخاب کنید'), backgroundColor: Colors.red));
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final Map<String, String> fields = {
@@ -59,63 +62,93 @@ class _AddListingScreenState extends State<AddListingScreen> {
       'area': _areaController.text,
       'transaction_type': _transactionType,
       'property_type': _propertyType,
+      // مقادیر پیش‌فرض برای فیلدهای جدید (هرچند در بک‌اند هم دیفالت دارند)
+      'status': 'active', 
+      'views_count': '0',
     };
-    if (_priceController.text.isNotEmpty) fields['price'] = _priceController.text;
+    
+    if (_priceController.text.isNotEmpty) {
+      fields['price'] = _priceController.text;
+    }
 
     final success = await ApiService().createListing(fields, _mainImage, _galleryImages);
-    setState(() => _isLoading = false);
-
-    if (success) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('آگهی ثبت شد!')));
-        Navigator.pop(context, true);
+    
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('آگهی با موفقیت ثبت شد!'), backgroundColor: Colors.green));
+        Navigator.pop(context, true); // بازگشت با نتیجه موفقیت
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطا در ثبت آگهی. لطفاً ورودی‌ها را بررسی کنید.'), backgroundColor: Colors.red));
       }
-    } else {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطا در ثبت.')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ثبت آگهی جدید')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('ثبت آگهی جدید', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600), // عرض فرم را محدود می‌کنیم
+            constraints: const BoxConstraints(maxWidth: 600),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // --- انتخاب عکس‌ها ---
-                    const Text('عکس اصلی (کاور):', style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    // --- بخش انتخاب عکس ---
+                    const Text('تصویر اصلی (کاور):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 12),
                     GestureDetector(
                       onTap: _pickMainImage,
                       child: Container(
-                        height: 200,
+                        height: 220,
                         width: double.infinity,
-                        decoration: BoxDecoration(color: Colors.black12, border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade300, width: 1.5, style: BorderStyle.solid),
+                        ),
                         child: _mainImage != null
-                            ? _displayImage(_mainImage!)
-                            : const Center(child: Icon(Icons.add_a_photo, size: 40, color: Colors.grey)),
+                            ? ClipRRect(borderRadius: BorderRadius.circular(14), child: _displayImage(_mainImage!))
+                            : Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_photo_alternate_outlined, size: 50, color: Colors.blue[300]),
+                                  const SizedBox(height: 8),
+                                  Text("لمس برای افزودن عکس", style: TextStyle(color: Colors.grey[600])),
+                                ],
+                              ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    
+                    const SizedBox(height: 24),
+                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('عکس‌های بیشتر (گالری):', style: TextStyle(fontWeight: FontWeight.bold)),
-                        IconButton(icon: const Icon(Icons.add_photo_alternate, color: Colors.blue), onPressed: _pickGalleryImages),
+                        const Text('گالری تصاویر (اختیاری):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        TextButton.icon(
+                          onPressed: _pickGalleryImages, 
+                          icon: const Icon(Icons.add), 
+                          label: const Text("افزودن")
+                        ),
                       ],
                     ),
+                    
                     if (_galleryImages.isNotEmpty)
                       SizedBox(
-                        height: 100,
+                        height: 110,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: _galleryImages.length,
@@ -123,47 +156,126 @@ class _AddListingScreenState extends State<AddListingScreen> {
                             return Stack(
                               children: [
                                 Container(
-                                  margin: const EdgeInsets.only(left: 8),
-                                  width: 100,
-                                  height: 100,
-                                  color: Colors.black12,
-                                  child: _displayImage(_galleryImages[index]),
+                                  margin: const EdgeInsets.only(left: 12),
+                                  width: 110,
+                                  height: 110,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: _displayImage(_galleryImages[index]),
+                                  ),
                                 ),
-                                Positioned(top: 0, right: 0, child: GestureDetector(onTap: () => setState(() => _galleryImages.removeAt(index)), child: const CircleAvatar(radius: 10, backgroundColor: Colors.red, child: Icon(Icons.close, size: 12, color: Colors.white)))),
+                                Positioned(
+                                  top: 4, right: 4,
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _galleryImages.removeAt(index)),
+                                    child: const CircleAvatar(radius: 12, backgroundColor: Colors.red, child: Icon(Icons.close, size: 14, color: Colors.white)),
+                                  ),
+                                ),
                               ],
                             );
                           },
                         ),
                       ),
-                    const SizedBox(height: 24),
-
-                    // --- فیلدها ---
-                    TextFormField(controller: _titleController, decoration: const InputDecoration(labelText: 'عنوان', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'الزامی' : null),
+                    
+                    const SizedBox(height: 32),
+                    const Divider(),
                     const SizedBox(height: 16),
-                    TextFormField(controller: _cityController, decoration: const InputDecoration(labelText: 'شهر', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'الزامی' : null),
+
+                    // --- فیلدهای متنی ---
+                    _buildTextField(_titleController, 'عنوان آگهی', Icons.title, maxLines: 1),
                     const SizedBox(height: 16),
                     
-                    Row(children: [
-                        Expanded(child: DropdownButtonFormField<String>(value: _transactionType, items: const [DropdownMenuItem(value: 'SA', child: Text('فروش')), DropdownMenuItem(value: 'RE', child: Text('اجاره'))], onChanged: (v) => setState(() => _transactionType = v!), decoration: const InputDecoration(labelText: 'نوع', border: OutlineInputBorder()))),
-                        const SizedBox(width: 8),
-                        Expanded(child: DropdownButtonFormField<String>(value: _propertyType, items: const [DropdownMenuItem(value: 'AP', child: Text('آپارتمان')), DropdownMenuItem(value: 'VI', child: Text('ویلا')), DropdownMenuItem(value: 'LA', child: Text('زمین'))], onChanged: (v) => setState(() => _propertyType = v!), decoration: const InputDecoration(labelText: 'ملک', border: OutlineInputBorder()))),
-                      ]),
+                    Row(
+                      children: [
+                        Expanded(child: _buildTextField(_cityController, 'شهر', Icons.location_city)),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildTextField(_areaController, 'متراژ (متر)', Icons.square_foot, isNumber: true)),
+                      ],
+                    ),
                     const SizedBox(height: 16),
-                    Row(children: [
-                        Expanded(child: TextFormField(controller: _priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'قیمت', border: OutlineInputBorder()))),
-                        const SizedBox(width: 8),
-                        Expanded(child: TextFormField(controller: _areaController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'متراژ', border: OutlineInputBorder()), validator: (v) => v!.isEmpty ? 'الزامی' : null)),
-                      ]),
+                    
+                    Row(
+                      children: [
+                        Expanded(child: _buildDropdown(_transactionType, [
+                          const DropdownMenuItem(value: 'SA', child: Text('فروش')),
+                          const DropdownMenuItem(value: 'RE', child: Text('اجاره')),
+                        ], (v) => setState(() => _transactionType = v!))),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildDropdown(_propertyType, [
+                          const DropdownMenuItem(value: 'AP', child: Text('آپارتمان')),
+                          const DropdownMenuItem(value: 'VI', child: Text('ویلا')),
+                          const DropdownMenuItem(value: 'LA', child: Text('زمین')),
+                        ], (v) => setState(() => _propertyType = v!))),
+                      ],
+                    ),
+                    
                     const SizedBox(height: 16),
-                    TextFormField(controller: _descController, maxLines: 3, decoration: const InputDecoration(labelText: 'توضیحات', border: OutlineInputBorder())),
-                    const SizedBox(height: 24),
-                    SizedBox(width: double.infinity, height: 50, child: ElevatedButton(onPressed: _isLoading ? null : _submitForm, style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white), child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('ثبت آگهی'))),
+                    _buildTextField(_priceController, 'قیمت (تومان)', Icons.attach_money, isNumber: true, isRequired: false),
+                    
+                    const SizedBox(height: 16),
+                    _buildTextField(_descController, 'توضیحات تکمیلی', Icons.description, maxLines: 4, isRequired: false),
+                    
+                    const SizedBox(height: 40),
+                    
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1E2746), // سرمه‌ای
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 5,
+                        ),
+                        child: _isLoading 
+                            ? const CircularProgressIndicator(color: Colors.white) 
+                            : const Text('ثبت نهایی آگهی', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, int maxLines = 1, bool isRequired = true}) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.grey),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue, width: 2)),
+        filled: true,
+        fillColor: Colors.grey[50],
+      ),
+      validator: isRequired ? (v) => v!.isEmpty ? 'این فیلد الزامی است' : null : null,
+    );
+  }
+
+  Widget _buildDropdown(String value, List<DropdownMenuItem<String>> items, ValueChanged<String?> onChanged) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      items: items,
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        filled: true,
+        fillColor: Colors.grey[50],
       ),
     );
   }

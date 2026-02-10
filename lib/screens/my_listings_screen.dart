@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/listing.dart';
 import '../services/api_service.dart';
-import '../utils.dart';
 import 'edit_listing_screen.dart';
 
 class MyListingsScreen extends StatefulWidget {
@@ -50,6 +49,29 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     }
   }
 
+  // ✅ اصلاح شده: اتصال واقعی به سرور
+  void _toggleSoldStatus(Listing listing) async {
+    String newStatus = (listing.status == 'sold') ? 'active' : 'sold';
+    
+    // آپدیت سریع UI (Optimistic Update)
+    setState(() {
+      listing.status = newStatus; 
+    });
+
+    final success = await ApiService().updateListingStatus(listing.id, newStatus);
+    
+    if (!success) {
+      // اگر خطا داد برگردان
+      setState(() {
+        listing.status = (newStatus == 'sold') ? 'active' : 'sold';
+      });
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطا در تغییر وضعیت')));
+    } else {
+      // اگر موفق بود، لیست را رفرش کن تا مطمئن شویم
+      _refreshListings();
+    }
+  }
+
   void _editListing(Listing listing) async {
     final result = await Navigator.push(
       context,
@@ -62,95 +84,109 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // --- منطق ریسپانسیو ---
     double screenWidth = MediaQuery.of(context).size.width;
-    int crossAxisCount = 2;
-    if (screenWidth > 600) crossAxisCount = 3;
-    if (screenWidth > 900) crossAxisCount = 4;
-    if (screenWidth > 1200) crossAxisCount = 5;
-    // ---------------------
+    int crossAxisCount = screenWidth > 1200 ? 5 : screenWidth > 900 ? 4 : screenWidth > 600 ? 3 : 2;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('آگهی‌های من'),
-        backgroundColor: Colors.blueGrey,
-        foregroundColor: Colors.white,
+        title: const Text('مدیریت آگهی‌های من'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
+      backgroundColor: const Color(0xFFF4F6F8),
       body: Directionality(
         textDirection: TextDirection.rtl,
         child: FutureBuilder<List<Listing>>(
           future: _myListingsFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('خطا: ${snapshot.error}'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('شما هنوز هیچ آگهی ثبت نکرده‌اید.'));
-            }
+            if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+            if (snapshot.hasError) return const Center(child: Text('خطا در دریافت اطلاعات'));
+            if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text('شما هنوز هیچ آگهی ثبت نکرده‌اید.'));
 
             final listings = snapshot.data!;
             return GridView.builder(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 0.7, // ارتفاع مناسب برای جا شدن دکمه‌های حذف/ویرایش
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.70, 
               ),
               itemCount: listings.length,
               itemBuilder: (context, index) {
                 final listing = listings[index];
+                // بررسی وضعیت از مدل واقعی
+                final isSold = listing.status == 'sold';
+
                 return Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Column(
                     children: [
-                      // عکس
                       Expanded(
-                        flex: 3,
-                        child: Container(
-                          width: double.infinity,
-                          decoration: const BoxDecoration(
-                            color: Colors.black12,
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                          ),
-                          child: listing.imageUrl != null
-                              ? ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-                                  child: Image.network(
-                                    listing.imageUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (c, e, s) => const Icon(Icons.error),
+                        flex: 4,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                              child: listing.imageUrl != null
+                                  ? Image.network(listing.imageUrl!, fit: BoxFit.cover)
+                                  : Container(color: Colors.grey[200], child: const Icon(Icons.image)),
+                            ),
+                            
+                            // ✅ نمایش مهر اگر در دیتابیس "sold" باشد
+                            if (isSold)
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.7), // فیلتر سفید
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                ),
+                                child: Center(
+                                  child: Transform.rotate(
+                                    angle: -0.2,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.red, width: 3),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        "واگذار شد",
+                                        style: TextStyle(color: Colors.red, fontSize: 20, fontWeight: FontWeight.w900),
+                                      ),
+                                    ),
                                   ),
-                                )
-                              : const Icon(Icons.image),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      // اطلاعات و دکمه‌ها
+                      
                       Expanded(
-                        flex: 2,
+                        flex: 3,
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(12.0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(listing.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                              Text(listing.city, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                              // دکمه‌های عملیاتی
+                              Text(listing.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(
+                                isSold ? 'غیرفعال' : (listing.price ?? 'توافقی'), 
+                                style: TextStyle(fontSize: 12, color: isSold ? Colors.grey : Colors.blue)
+                              ),
+                              const Divider(height: 12),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
-                                    onPressed: () => _editListing(listing),
-                                    tooltip: 'ویرایش',
+                                  _buildIconButton(Icons.edit, Colors.blue, () => _editListing(listing)),
+                                  _buildIconButton(
+                                    isSold ? Icons.refresh : Icons.check_circle_outline, 
+                                    isSold ? Colors.green : Colors.orange, 
+                                    () => _toggleSoldStatus(listing) // ارسال کل آبجکت
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                                    onPressed: () => _deleteListing(listing.id),
-                                    tooltip: 'حذف',
-                                  ),
+                                  _buildIconButton(Icons.delete_outline, Colors.red, () => _deleteListing(listing.id)),
                                 ],
                               ),
                             ],
@@ -164,6 +200,18 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildIconButton(IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, size: 20, color: color),
       ),
     );
   }

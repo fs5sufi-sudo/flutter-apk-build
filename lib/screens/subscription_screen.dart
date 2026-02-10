@@ -19,14 +19,28 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   void _buy(SubscriptionPackage pkg) async {
-    // شبیه‌سازی خرید (در آینده به درگاه وصل می‌شود)
-    final success = await ApiService().buyPackage(pkg.id);
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('در حال پردازش...'), duration: Duration(milliseconds: 500)));
+
+    final result = await ApiService().buyPackage(pkg.id);
+    
     if (mounted) {
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خرید موفقیت‌آمیز بود!'), backgroundColor: Colors.green));
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result['message']), backgroundColor: Colors.green)
+        );
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('خطا در خرید')));
+        // ✅ نمایش دیالوگ خطا (پیام از سرور)
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("خطا", textAlign: TextAlign.right),
+            content: Text(result['message'], textAlign: TextAlign.right),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("باشه"))
+            ],
+          ),
+        );
       }
     }
   }

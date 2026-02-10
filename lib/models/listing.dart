@@ -11,10 +11,16 @@ class Listing {
   final String? imageUrl;
   final List<GalleryImage> gallery;
   final DateTime createdAt;
-  final bool isFavorited;
+  
+  bool isFavorited; 
+  String status; 
   final int agentId;
-  final String? agentName; // جدید
-  final String? agentAvatar; // جدید
+  final String? agentName;
+  final String? agentAvatar;
+  
+  // ✅ فیلدهای جدید
+  final int likesCount;
+  final int commentsCount;
 
   Listing({
     required this.id,
@@ -30,9 +36,12 @@ class Listing {
     required this.gallery,
     required this.createdAt,
     required this.isFavorited,
+    required this.status,
     required this.agentId,
     this.agentName,
     this.agentAvatar,
+    this.likesCount = 0,
+    this.commentsCount = 0,
   });
 
   factory Listing.fromJson(Map<String, dynamic> json) {
@@ -43,12 +52,13 @@ class Listing {
       });
     }
 
-    // دریافت اطلاعات مشاور
     String? aName;
     String? aAvatar;
-    if (json['agent_info'] != null) {
-      aName = json['agent_info']['username'];
-      aAvatar = json['agent_info']['avatar'];
+    if (json['agent_info'] != null) { // اگر ساختار جیسون شما agent_info دارد
+       // ...
+    } else {
+       aName = json['agent_name']; // طبق سریالایزر جدید
+       aAvatar = json['agent_avatar'];
     }
 
     return Listing(
@@ -67,9 +77,12 @@ class Listing {
           ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
       isFavorited: json['is_favorited'] ?? false,
-      agentId: json['agent'] ?? 0,
+      status: json['status'] ?? 'active',
+      agentId: json['agent_id'] ?? 0,
       agentName: aName,
       agentAvatar: aAvatar,
+      likesCount: json['likes_count'] ?? 0,
+      commentsCount: json['comments_count'] ?? 0,
     );
   }
 }

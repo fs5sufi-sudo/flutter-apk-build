@@ -1,3 +1,4 @@
+
 pluginManagement {
     val flutterSdkPath = run {
         val properties = java.util.Properties()
@@ -25,9 +26,10 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    // استفاده از نسخه‌های هماهنگ و پایدار
-    id("com.android.application") version "8.2.1" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
+    // استفاده از نسخه 8.1.0 (سازگارترین نسخه با فلاتر فعلی)
+    id("com.android.application") version "8.1.0" apply false
+    // استفاده از نسخه 1.8.22 (بدون باگ‌های نسخه 1.9)
+    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
 }
 
 include(":app")

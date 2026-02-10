@@ -28,7 +28,6 @@ android {
 
     buildTypes {
         release {
-            // تنظیمات ساده برای بیلد موفق
             isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")

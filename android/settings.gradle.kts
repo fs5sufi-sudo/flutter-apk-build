@@ -25,9 +25,9 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    // نسخه 8.2.1 پایدار و سازگار
+    // استفاده از نسخه‌های هماهنگ و پایدار
     id("com.android.application") version "8.2.1" apply false
-    id("org.jetbrains.kotlin.android") version "1.8.22" apply false
+    id("org.jetbrains.kotlin.android") version "1.9.0" apply false
 }
 
 include(":app")

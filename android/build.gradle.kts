@@ -7,7 +7,8 @@ plugins {
 android {
     namespace = "com.example.real_estate_app"
     compileSdk = 34
-    ndkVersion = "25.1.8937393"
+    // خط NDK حذف شد چون در سرور گیت‌هاب ایجاد مشکل می‌کند
+    // ndkVersion = "..." 
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

@@ -11,18 +11,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # استفاده از جاوا 17 (استانداردترین نسخه برای فلاتر جدید)
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
+    # استفاده از آخرین نسخه فلاتر (چون فایل pubspec را درست کردیم، دیگر گیر نمی‌دهد)
     - uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
 
-    # نصب صحیح SDK اندروید برای گیت‌هاب
     - name: Install Android SDK
       uses: android-actions/setup-android@v3
+
+    - name: Accept Android Licenses
+      run: |
+        yes | flutter doctor --android-licenses
 
     - name: Flutter Clean
       run: flutter clean
@@ -30,9 +35,9 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
-    # ساخت نسخه Release (الان که همه چیز تنظیم است، ریلیز کار می‌کند)
+    # ساخت نسخه Release
     - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons
+      run: flutter build apk --release
 
     - name: Upload APK
       uses: actions/upload-artifact@v4

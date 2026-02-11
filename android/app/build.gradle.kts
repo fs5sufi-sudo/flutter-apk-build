@@ -7,8 +7,7 @@ plugins {
 android {
     namespace = "com.example.real_estate_app"
     compileSdk = 34
-    ndkVersion = "25.1.8937393"
-
+    
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -20,7 +19,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.real_estate_app"
-        minSdk = 21 // <--- نسخه مهم
+        minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
@@ -28,6 +27,7 @@ android {
 
     buildTypes {
         release {
+            // این خطوط باعث می‌شوند بیلد گیر نکند
             isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")

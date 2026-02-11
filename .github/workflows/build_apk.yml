@@ -11,22 +11,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # استفاده از جاوا 17
+    # استفاده از جاوا 17 (بهترین گزینه برای این نسخه فلاتر)
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    # بازگشت به نسخه استیبل (مشکل نسخه Dart را حل می‌کند)
+    # نسخه طلایی 3.24.0: جدید ولی بدون باگ‌های AGP 9
     - uses: subosito/flutter-action@v2
       with:
+        flutter-version: '3.24.0'
         channel: 'stable'
 
-    # نصب SDK اندروید (حیاتی برای گیت‌هاب)
     - name: Install Android SDK
       uses: android-actions/setup-android@v3
 
-    # تایید لایسنس‌ها (مهم برای جلوگیری از گیر کردن بیلد)
+    # تایید لایسنس‌ها (حیاتی)
     - name: Accept Android Licenses
       run: |
         yes | flutter doctor --android-licenses
@@ -37,11 +37,10 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
-    # ساخت APK ریلیز (بدون --no-tree-shake-icons که با نسخه جدید ناسازگار است)
+    # ساخت نسخه Release
     - name: Build APK
-      run: flutter build apk --release
+      run: flutter build apk --release --no-tree-shake-icons
 
-    # آپلود فایل نهایی
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:

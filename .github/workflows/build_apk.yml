@@ -11,16 +11,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    # استفاده از جاوا 17
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
+    # بازگشت به نسخه استیبل (مشکل نسخه Dart را حل می‌کند)
     - uses: subosito/flutter-action@v2
       with:
-        # استفاده از نسخه قدیمی‌تر و سازگار (بدون خطای AGP 9)
-        flutter-version: '3.19.0'
-        # channel: 'stable' را حذف کردم تا مجبور نشود نسخه جدید بگیرد
+        channel: 'stable'
 
     # نصب SDK اندروید (حیاتی برای گیت‌هاب)
     - name: Install Android SDK
@@ -28,7 +28,8 @@ jobs:
 
     # تایید لایسنس‌ها (مهم برای جلوگیری از گیر کردن بیلد)
     - name: Accept Android Licenses
-      run: yes | flutter doctor --android-licenses
+      run: |
+        yes | flutter doctor --android-licenses
 
     - name: Flutter Clean
       run: flutter clean
@@ -36,9 +37,9 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
-    # ساخت APK ریلیز
+    # ساخت APK ریلیز (بدون --no-tree-shake-icons که با نسخه جدید ناسازگار است)
     - name: Build APK
-      run: flutter build apk --release --no-tree-shake-icons
+      run: flutter build apk --release
 
     # آپلود فایل نهایی
     - name: Upload APK

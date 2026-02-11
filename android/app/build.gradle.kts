@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.example.real_estate_app"
     compileSdk = 34
-    
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -19,7 +19,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.real_estate_app"
-        minSdk = flutter.minSdkVersion
+        minSdk = 21
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"

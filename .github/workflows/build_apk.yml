@@ -11,22 +11,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # استفاده از جاوا 17 (چون SDK اندروید جدید است و به این نیاز دارد)
+    # استفاده از جاوا 17 (استانداردترین نسخه برای فلاتر جدید)
     - uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    # نسخه فلاتر 3.13.0: هم با جاوا 17 کار می‌کند، هم با کد شما
+    # استفاده از آخرین نسخه فلاتر (چون فایل pubspec را درست کردیم، دیگر گیر نمی‌دهد)
     - uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.13.0'
         channel: 'stable'
 
     - name: Install Android SDK
       uses: android-actions/setup-android@v3
 
-    # تایید لایسنس‌ها (حیاتی)
     - name: Accept Android Licenses
       run: |
         yes | flutter doctor --android-licenses
@@ -37,7 +35,7 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
-    # ساخت APK ریلیز
+    # ساخت نسخه Release
     - name: Build APK
       run: flutter build apk --release
 

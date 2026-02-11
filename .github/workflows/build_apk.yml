@@ -18,11 +18,17 @@ jobs:
 
     - uses: subosito/flutter-action@v2
       with:
-        channel: 'stable'
+        # استفاده از نسخه قدیمی‌تر و سازگار (بدون خطای AGP 9)
+        flutter-version: '3.19.0'
+        # channel: 'stable' را حذف کردم تا مجبور نشود نسخه جدید بگیرد
 
-    # نصب صحیح SDK اندروید برای گیت‌هاب
+    # نصب SDK اندروید (حیاتی برای گیت‌هاب)
     - name: Install Android SDK
       uses: android-actions/setup-android@v3
+
+    # تایید لایسنس‌ها (مهم برای جلوگیری از گیر کردن بیلد)
+    - name: Accept Android Licenses
+      run: yes | flutter doctor --android-licenses
 
     - name: Flutter Clean
       run: flutter clean
@@ -30,10 +36,11 @@ jobs:
     - name: Get Dependencies
       run: flutter pub get
 
-    # ساخت نسخه Release (الان که همه چیز تنظیم است، ریلیز کار می‌کند)
+    # ساخت APK ریلیز
     - name: Build APK
       run: flutter build apk --release --no-tree-shake-icons
 
+    # آپلود فایل نهایی
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:

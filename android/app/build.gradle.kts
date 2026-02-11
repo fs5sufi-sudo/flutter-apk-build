@@ -27,7 +27,6 @@ android {
 
     buildTypes {
         release {
-            // این خطوط باعث می‌شوند بیلد گیر نکند
             isMinifyEnabled = false
             isShrinkResources = false
             signingConfig = signingConfigs.getByName("debug")
